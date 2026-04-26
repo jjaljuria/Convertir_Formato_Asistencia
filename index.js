@@ -8,7 +8,8 @@ const filePath = path.join(__dirname, 'asistencia-01-04-2026_24-04-2026.xls')
 const book = xlsx.readFile(filePath, {cellDates: true})
 const sheetName = book.SheetNames[0]
 
-const data = xlsx.utils.sheet_to_json(book.Sheets[sheetName])
+// Leer la hoja manteniendo los valores en crudo para preservar objetos Date
+const data = xlsx.utils.sheet_to_json(book.Sheets[sheetName], { raw: true })
 
 const fechas = data.map(reg => new Date(reg['Fecha/Hora']))
 
@@ -53,29 +54,57 @@ const trabajadoresUnicos = data.reduce((acc, registro) => {
 
 const mapaAsistencia = {};
 data.forEach(reg => {
-    const fecha = formatearFecha(reg["Fecha/Hora"])
-    const llave = `${reg["ID de usuario"]}-${fecha}`;
-    reg["Fecha/Hora"] = fecha
-    mapaAsistencia[llave] = reg; 
+    const fechaObj = reg["Fecha/Hora"] instanceof Date ? reg["Fecha/Hora"] : new Date(reg["Fecha/Hora"]);
+    const fechaDia = formatearFecha(fechaObj);
+    const llave = `${reg["ID de usuario"]}-${fechaDia}`;
+    if (!mapaAsistencia[llave]) mapaAsistencia[llave] = [];
+    mapaAsistencia[llave].push(fechaObj);
 });
+
+// Helper: formatear hora a HH:mm
+const formatHora = (d) => {
+    if (!d) return '';
+    const date = d instanceof Date ? d : new Date(d);
+    const hh = String(date.getHours()).padStart(2, '0');
+    const mm = String(date.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+};
+
+// Helper: obtener entrada/salida (primera/ultima) desde un array de Date
+const obtenerEntradaSalida = (fechasArray) => {
+    if (!fechasArray || fechasArray.length === 0) return { entrada: '', salida: '' };
+    const sorted = fechasArray.slice().sort((a, b) => a - b);
+    const entrada = sorted[0];
+    const salida = sorted[sorted.length - 1];
+    return { entrada: formatHora(entrada), salida: formatHora(salida) };
+};
 
 const reporteConFaltas = [];
 
 for (const trabajador of trabajadoresUnicos) {
     for (const dia of calendario) {
         const llaveBusqueda = `${trabajador.id}-${dia}`;
-        const registroExistente = mapaAsistencia[llaveBusqueda];
+        const marcas = mapaAsistencia[llaveBusqueda];
 
-        if (registroExistente) {
-            // Si asistió, agregamos su registro original
-            reporteConFaltas.push(registroExistente);
-        } else {
-            // Si NO asistió, creamos la fila de falta
+        if (marcas && marcas.length) {
+            const { entrada, salida } = obtenerEntradaSalida(marcas);
             reporteConFaltas.push({
                 "ID de usuario": trabajador.id,
                 "Nombre": trabajador.nombre,
-                "Fecha/Hora": dia,
                 "Departamento": trabajador.departamento,
+                "Fecha": dia,
+                "Entrada": entrada,
+                "Salida": salida,
+                "Estado": "ASISTIÓ"
+            });
+        } else {
+            reporteConFaltas.push({
+                "ID de usuario": trabajador.id,
+                "Nombre": trabajador.nombre,
+                "Departamento": trabajador.departamento,
+                "Fecha": dia,
+                "Entrada": '',
+                "Salida": '',
                 "Estado": "FALTÓ"
             });
         }
