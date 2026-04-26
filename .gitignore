@@ -1,0 +1,9 @@
+node_modules
+# Archivos de Excel
+*.xlsx
+*.xls
+*.xlsm
+*.xlsb
+# Temporales de Excel
+~$*.xlsx
+~$*.xls
