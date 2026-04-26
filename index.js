@@ -1,10 +1,15 @@
 const ExcelJS = require('exceljs');
-const path = require('path');
+const path = require('node:path');
 const xlsx = require('xlsx');
+const fs = require('node:fs')
 
-// Usamos rutas absolutas para evitar confusiones
-const inputFile = path.join(__dirname, 'asistencia-01-04-2026_24-04-2026.xls');
-const outputFile = path.join(__dirname, 'reporte-asistencia-final.xlsx');
+
+// 1. Capturar argumentos de la terminal
+// process.argv[0] es 'node', process.argv[1] es el script. 
+// El [2] es el input y el [3] es el output.
+const rutaEntrada = process.argv[2];
+const rutaSalida = process.argv[3];
+
 
 // --- FUNCIONES DE AYUDA ---
 const formatearFecha = (f) => {
@@ -58,11 +63,26 @@ const generarMapaAsistencia = (data) =>{
 }
 
 async function generarReporte() {
-    console.log("🚀 Iniciando proceso...");
+// Validar que se pasaron los argumentos necesarios
+    if (!rutaEntrada || !rutaSalida) {
+        console.error("❌ ERROR: Faltan argumentos.");
+        console.log("Uso correcto: node index.js <ruta_entrada> <ruta_salida>");
+        console.log('Ejemplo: node index.js ./asistencia.xls ./reporte_abril.xlsx');
+        return;
+    }
+
+    // Validar si el archivo de entrada realmente existe
+    if (!fs.existsSync(rutaEntrada)) {
+        console.error(`❌ ERROR: El archivo de entrada no existe en: ${rutaEntrada}`);
+        return;
+    }
+
+
+    console.log(`🚀 Procesando: ${path.basename(rutaEntrada)}...`);
 
     try {
         // 1. LEER DATOS
-        const book = xlsx.readFile(inputFile, { cellDates: true });
+        const book = xlsx.readFile(rutaEntrada, { cellDates: true });
         const data = xlsx.utils.sheet_to_json(book.Sheets[book.SheetNames[0]]);
         
         if (data.length === 0) {
@@ -135,8 +155,8 @@ async function generarReporte() {
         worksheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4472C4' } };
 
         // 5. GUARDAR (CON AWAIT)
-        console.log(`💾 Intentando guardar archivo en: ${outputFile}`);
-        await workbook.xlsx.writeFile(outputFile);
+        console.log(`💾 Intentando guardar archivo en: ${rutaSalida}`);
+        await workbook.xlsx.writeFile(rutaSalida);
         
         console.log("✨ ¡PROCESO COMPLETADO! El archivo se generó correctamente.");
 
