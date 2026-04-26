@@ -9,3 +9,6 @@ node_modules
 ~$*.xls
 *.xlsx#
 *.xls#
+
+*.code-workspace
+.vscode/
