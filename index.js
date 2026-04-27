@@ -4,13 +4,6 @@ const xlsx = require('xlsx');
 const fs = require('node:fs')
 
 
-// 1. Capturar argumentos de la terminal
-// process.argv[0] es 'node', process.argv[1] es el script. 
-// El [2] es el input y el [3] es el output.
-const rutaEntrada = process.argv[2];
-const rutaSalida = process.argv[3];
-
-
 // --- FUNCIONES DE AYUDA ---
 const formatearFecha = (f) => {
     const dd = String(f.getDate()).padStart(2, '0');
@@ -62,7 +55,7 @@ const generarMapaAsistencia = (data) =>{
     return mapaAsistencia
 }
 
-async function generarReporte() {
+async function generarReporte(rutaEntrada, rutaSalida) {
 // Validar que se pasaron los argumentos necesarios
     if (!rutaEntrada || !rutaSalida) {
         console.error("❌ ERROR: Faltan argumentos.");
@@ -165,5 +158,18 @@ async function generarReporte() {
     }
 }
 
-// Ejecutar la función
-generarReporte();
+if (require.main === module) {
+    // 1. Capturar argumentos de la terminal
+    // process.argv[0] es 'node', process.argv[1] es el script.
+    // El [2] es el input y el [3] es el output.
+    const rutaEntrada = process.argv[2];
+    const rutaSalida = process.argv[3];
+
+    (async () => {
+        await generarReporte(rutaEntrada, rutaSalida);
+    })();
+}
+
+module.exports = {
+    generarReporte
+}
