@@ -55,6 +55,10 @@ const generarMapaAsistencia = (data) =>{
     return mapaAsistencia
 }
 
+const obtenerDepartamentos = (data) =>{
+    return [...new Set(data.map(reg => reg["Departamento"]))]
+}
+
 async function generarReporte(rutaEntrada, rutaSalida) {
 // Validar que se pasaron los argumentos necesarios
     if (!rutaEntrada || !rutaSalida) {
@@ -82,7 +86,9 @@ async function generarReporte(rutaEntrada, rutaSalida) {
             throw new Error("El archivo de entrada está vacío o no se leyó correctamente.");
         }
         console.log(`✅ Leídos ${data.length} registros del archivo original.`);
-
+    
+        const departamentos = obtenerDepartamentos(data)
+        
 
         const calendario = generarCalendario(data)
         const trabajadores = obtenerTrabajadores(data)
@@ -91,9 +97,9 @@ async function generarReporte(rutaEntrada, rutaSalida) {
 
         // 2. CONFIGURAR EXCELJS
         const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('Asistencia');
+        
 
-        worksheet.columns = [
+        const sheetColumns = [
             { header: 'ID', key: 'id', width: 10 },
             { header: 'Nombre', key: 'nombre', width: 30 },
             { header: 'Fecha', key: 'fecha', width: 15 },
@@ -103,51 +109,61 @@ async function generarReporte(rutaEntrada, rutaSalida) {
             { header: 'Estado', key: 'estado', width: 25 }
         ];
 
-        // 3. GENERAR FILAS
-        console.log("⏳ Generando filas y aplicando lógica de entrada/salida...");
-        trabajadores.forEach(trabajador => {
-            calendario.forEach(dia => {
-                const llave = `${trabajador.id}-${dia}`;
-                const registros = mapaAsistencia[llave];
-                
-                const [d, m, y] = dia.split('/');
-                const fEval = new Date(2000 + parseInt(y), parseInt(m)-1, parseInt(d));
-                const esFinde = (fEval.getDay() === 0 || fEval.getDay() === 6);
+        console.log("⏳ Generando hojas por departamento y aplicando lógica de entrada/salida...");
+        departamentos.forEach(depto => {
+            const sheetName = depto;
+            const worksheet = workbook.addWorksheet(sheetName);
+            worksheet.columns = sheetColumns;
 
-                let rowData;
-                if (registros && registros.length > 0) {
-                    registros.sort((a, b) => new Date(a["Fecha/Hora"]) - new Date(b["Fecha/Hora"]));
-                    const hEntrada = new Date(registros[0]["Fecha/Hora"]).toLocaleTimeString('es-VE', {hour:'2-digit', minute:'2-digit', hour12:false});
-                    const hSalida = registros.length > 1 
-                        ? new Date(registros[registros.length-1]["Fecha/Hora"]).toLocaleTimeString('es-VE', {hour:'2-digit', minute:'2-digit', hour12:false})
-                        : "--:--";
+            // FORMATO DE ENCABEZADO
+            worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            worksheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4472C4' } };
+            
+            //GENERAR FILAS
+            console.log(`⏳ Procesando los registros de ${depto}...` );
+            const trabajadoresDepto = trabajadores.filter(t => t.depto === depto)
 
-                    rowData = {
-                        id: trabajador.id, nombre: trabajador.nombre, fecha: dia,
-                        entrada: hEntrada, salida: hSalida, depto: trabajador.depto,
-                        estado: esFinde ? 'TRABAJÓ FIN DE SEMANA' : 'PRESENTE'
-                    };
-                } else {
-                    rowData = {
-                        id: trabajador.id, nombre: trabajador.nombre, fecha: dia,
-                        entrada: '--:--', salida: '--:--', depto: trabajador.depto,
-                        estado: esFinde ? 'FIN DE SEMANA' : 'FALTÓ'
-                    };
-                }
+            trabajadoresDepto.forEach(trabajador => {
+                calendario.forEach(dia => {
+                    const llave = `${trabajador.id}-${dia}`;
+                    const registros = mapaAsistencia[llave];
+                    
+                    const [d, m, y] = dia.split('/');
+                    const fEval = new Date(2000 + parseInt(y), parseInt(m)-1, parseInt(d));
+                    const esFinde = (fEval.getDay() === 0 || fEval.getDay() === 6);
 
-                const row = worksheet.addRow(rowData);
-                // Color rojo si faltó
-                if (rowData.estado === 'FALTÓ') {
-                    row.getCell('estado').font = { color: { argb: 'FFFF0000' }, bold: true };
-                }
+                    let rowData;
+                    if (registros && registros.length > 0) {
+                        registros.sort((a, b) => new Date(a["Fecha/Hora"]) - new Date(b["Fecha/Hora"]));
+                        const hEntrada = new Date(registros[0]["Fecha/Hora"]).toLocaleTimeString('es-VE', {hour:'2-digit', minute:'2-digit', hour12:false});
+                        const hSalida = registros.length > 1 
+                            ? new Date(registros[registros.length-1]["Fecha/Hora"]).toLocaleTimeString('es-VE', {hour:'2-digit', minute:'2-digit', hour12:false})
+                            : "--:--";
+
+                        rowData = {
+                            id: trabajador.id, nombre: trabajador.nombre, fecha: dia,
+                            entrada: hEntrada, salida: hSalida, depto: trabajador.depto,
+                            estado: esFinde ? 'TRABAJÓ FIN DE SEMANA' : 'PRESENTE'
+                        };
+                    } else {
+                        rowData = {
+                            id: trabajador.id, nombre: trabajador.nombre, fecha: dia,
+                            entrada: '--:--', salida: '--:--', depto: trabajador.depto,
+                            estado: esFinde ? 'FIN DE SEMANA' : 'FALTÓ'
+                        };
+                    }
+
+                    const row = worksheet.addRow(rowData);
+                    // Color rojo si faltó
+                    if (rowData.estado === 'FALTÓ') {
+                        row.getCell('estado').font = { color: { argb: 'FFFF0000' }, bold: true };
+                    }
+                });
             });
-        });
+        })
 
-        // 4. FORMATO DE ENCABEZADO
-        worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-        worksheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4472C4' } };
 
-        // 5. GUARDAR (CON AWAIT)
+        // GUARDAR (CON AWAIT)
         console.log(`💾 Intentando guardar archivo en: ${rutaSalida}`);
         await workbook.xlsx.writeFile(rutaSalida);
         
