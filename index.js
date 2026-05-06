@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const ExcelJS = require('exceljs');
 const path = require('node:path');
 const xlsx = require('xlsx');
