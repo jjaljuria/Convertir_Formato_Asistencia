@@ -37,9 +37,9 @@ Uso
 2. Ejecuta el script indicando ruta de entrada y ruta de salida:
 
 ```bash
-node index.js <ruta_entrada> <ruta_salida>
+cofa <ruta_entrada> <ruta_salida>
 # Ejemplo:
-node index.js ./asistencia.xls ./reporte_abril.xlsx
+cofa ./asistencia.xls ./reporte_abril.xlsx
 ```
 
 Salida
