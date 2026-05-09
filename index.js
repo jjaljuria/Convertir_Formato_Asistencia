@@ -39,7 +39,8 @@ const obtenerTrabajadores = (data) => {
     const columnas = data.columnas
     return data.reduce((acc, reg) => {
         if (!acc.find(t => t.id === reg[columnas.id])) {
-            acc.push({ id: reg[columnas.id], nombre: reg[columnas.nombre], depto: reg[columnas.departamento] });
+            const departamento = reg[columnas.departamento] || ""; // Asigna "" si es undefined
+            acc.push({ id: reg[columnas.id], nombre: reg[columnas.nombre], depto: departamento });
         }
         return acc;
     }, []);
@@ -61,20 +62,32 @@ const generarMapaAsistencia = (data) => {
 
 const obtenerDepartamentos = (data) => {
     const columnas = data.columnas
-    return [...new Set(data.map(reg => reg[columnas.departamento]))]
+    return [...new Set(data.map(reg => reg[columnas.departamento]).filter(depto => depto !== undefined && depto !== null))]
 }
 
-async function generarReporte(rutaEntrada, rutaSalida, config = {
-    entrada: {
-        id: 'ID de usuario',
-        nombre: 'Nombre',
-        fechaHora: 'Fecha/Hora',
-        departamento: 'Departamento'
-    },
-    salida: {
+async function generarReporte(rutaEntrada, rutaSalida, usuarioConfig = {}) {
+    const defaultConfig = {
+        entrada: {
+            id: 'ID de usuario',
+            nombre: 'Nombre',
+            fechaHora: 'Fecha/Hora',
+            departamento: 'Departamento'
+        },
+        salida: {
+            id: 'iD',
+            nombre: 'Nombre',
+            fecha: 'Fecha',
+            entrada: 'Entrada',
+            salida: 'Salida',
+            departamento: 'Departamento',
+            estado: "Estado"
+        }
+    };
 
-    }
-}) {
+    const config = {
+        entrada: { ...defaultConfig.entrada, ...usuarioConfig.entrada },
+        salida: { ...defaultConfig.salida, ...usuarioConfig.salida }
+    };
     // Validar que se pasaron los argumentos necesarios
     if (!rutaEntrada || !rutaSalida) {
         console.error("❌ ERROR: Faltan argumentos.");
@@ -117,13 +130,13 @@ async function generarReporte(rutaEntrada, rutaSalida, config = {
 
 
         const sheetColumns = [
-            { header: 'ID', key: 'id', width: 10 },
-            { header: 'Nombre', key: 'nombre', width: 30 },
-            { header: 'Fecha', key: 'fecha', width: 15 },
-            { header: 'Entrada', key: 'entrada', width: 12 },
-            { header: 'Salida', key: 'salida', width: 12 },
-            { header: 'Departamento', key: 'depto', width: 25 },
-            { header: 'Estado', key: 'estado', width: 25 }
+            { header: config.salida.id, key: 'id', width: 10 },
+            { header: config.salida.nombre, key: 'nombre', width: 30 },
+            { header: config.salida.fecha, key: 'fecha', width: 15 },
+            { header: config.salida.entrada, key: 'entrada', width: 12 },
+            { header: config.salida.salida, key: 'salida', width: 12 },
+            { header: config.salida.departamento, key: 'depto', width: 25 },
+            { header: config.salida.estado, key: 'estado', width: 25 }
         ];
 
         console.log("⏳ Generando hojas por departamento y aplicando lógica de entrada/salida...");
@@ -199,7 +212,14 @@ if (require.main === module) {
     const rutaSalida = process.argv[3];
 
     (async () => {
-        await generarReporte(rutaEntrada, rutaSalida);
+        await generarReporte(rutaEntrada, rutaSalida, {
+            entrada: {
+                id: 'ID de trabajador'
+            },
+            salida: {
+                id: 'Identificacion'
+            }
+        });
     })();
 }
 
