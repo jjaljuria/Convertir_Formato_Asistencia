@@ -212,14 +212,7 @@ if (require.main === module) {
     const rutaSalida = process.argv[3];
 
     (async () => {
-        await generarReporte(rutaEntrada, rutaSalida, {
-            entrada: {
-                id: 'ID de trabajador'
-            },
-            salida: {
-                id: 'Identificacion'
-            }
-        });
+        await generarReporte(rutaEntrada, rutaSalida);
     })();
 }
 
