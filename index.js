@@ -14,7 +14,7 @@ const formatearFecha = (f) => {
 };
 
 const generarCalendario = (data) => {
-    const columnas = data.config;
+    const columnas = data.columnas;
     // --- PROCESAMIENTO DE FECHAS ---
     const fechas = data.map(reg => new Date(reg[columnas.fechaHora]));
 
@@ -36,7 +36,7 @@ const generarCalendario = (data) => {
 
 // --- AGRUPAR TRABAJADORES ---
 const obtenerTrabajadores = (data) => {
-    const columnas = data.config
+    const columnas = data.columnas
     return data.reduce((acc, reg) => {
         if (!acc.find(t => t.id === reg[columnas.id])) {
             acc.push({ id: reg[columnas.id], nombre: reg[columnas.nombre], depto: reg[columnas.departamento] });
@@ -48,7 +48,7 @@ const obtenerTrabajadores = (data) => {
 // -- MAPEA LOS REGISTROS PARA SU FACIL ACCESO
 const generarMapaAsistencia = (data) => {
     const mapaAsistencia = {};
-    const columnas = data.config
+    const columnas = data.columnas
     data.forEach(reg => {
         const fLimpia = formatearFecha(new Date(reg[columnas.fechaHora]));
         const llave = `${reg[columnas.id]}-${fLimpia}`;
@@ -60,15 +60,20 @@ const generarMapaAsistencia = (data) => {
 }
 
 const obtenerDepartamentos = (data) => {
-    const columnas = data.config
+    const columnas = data.columnas
     return [...new Set(data.map(reg => reg[columnas.departamento]))]
 }
 
 async function generarReporte(rutaEntrada, rutaSalida, config = {
-    id: 'ID de usuario',
-    nombre: 'Nombre',
-    fechaHora: 'Fecha/Hora',
-    departamento: 'Departamento'
+    entrada: {
+        id: 'ID de usuario',
+        nombre: 'Nombre',
+        fechaHora: 'Fecha/Hora',
+        departamento: 'Departamento'
+    },
+    salida: {
+
+    }
 }) {
     // Validar que se pasaron los argumentos necesarios
     if (!rutaEntrada || !rutaSalida) {
@@ -97,7 +102,7 @@ async function generarReporte(rutaEntrada, rutaSalida, config = {
         }
         console.log(`✅ Leídos ${data.length} registros del archivo original.`);
 
-        data.config = config
+        data.columnas = config.entrada
 
         const departamentos = obtenerDepartamentos(data)
 
@@ -146,10 +151,10 @@ async function generarReporte(rutaEntrada, rutaSalida, config = {
 
                     let rowData;
                     if (registros && registros.length > 0) {
-                        registros.sort((a, b) => new Date(a[config.fechaHora]) - new Date(b[config.fechaHora]));
-                        const hEntrada = new Date(registros[0][config.fechaHora]).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false });
+                        registros.sort((a, b) => new Date(a[config.entrada.fechaHora]) - new Date(b[config.fechaHora]));
+                        const hEntrada = new Date(registros[0][config.entrada.fechaHora]).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false });
                         const hSalida = registros.length > 1
-                            ? new Date(registros[registros.length - 1][config.fechaHora]).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false })
+                            ? new Date(registros[registros.length - 1][config.entrada.fechaHora]).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false })
                             : "--:--";
 
                         rowData = {
