@@ -13,14 +13,15 @@ const formatearFecha = (f) => {
     return `${dd}/${mm}/${yy}`;
 };
 
-const generarCalendario = (data) =>{
+const generarCalendario = (data) => {
+    const columnas = data.config;
     // --- PROCESAMIENTO DE FECHAS ---
-    const fechas = data.map(reg => new Date(reg['Fecha/Hora']));
+    const fechas = data.map(reg => new Date(reg[columnas.fechaHora]));
 
     const minFecha = new Date(Math.min(...fechas));
     const maxFecha = new Date(Math.max(...fechas));
-    minFecha.setHours(0,0,0,0);
-    maxFecha.setHours(0,0,0,0);
+    minFecha.setHours(0, 0, 0, 0);
+    maxFecha.setHours(0, 0, 0, 0);
 
     let fechaAux = new Date(minFecha);
     const calendario = [];
@@ -34,21 +35,23 @@ const generarCalendario = (data) =>{
 }
 
 // --- AGRUPAR TRABAJADORES ---
-const obtenerTrabajadores = (data) =>{
+const obtenerTrabajadores = (data) => {
+    const columnas = data.config
     return data.reduce((acc, reg) => {
-        if (!acc.find(t => t.id === reg["ID de usuario"])) {
-            acc.push({ id: reg["ID de usuario"], nombre: reg["Nombre"], depto: reg["Departamento"] });
+        if (!acc.find(t => t.id === reg[columnas.id])) {
+            acc.push({ id: reg[columnas.id], nombre: reg[columnas.nombre], depto: reg[columnas.departamento] });
         }
         return acc;
     }, []);
 }
 
 // -- MAPEA LOS REGISTROS PARA SU FACIL ACCESO
-const generarMapaAsistencia = (data) =>{
+const generarMapaAsistencia = (data) => {
     const mapaAsistencia = {};
+    const columnas = data.config
     data.forEach(reg => {
-        const fLimpia = formatearFecha(new Date(reg["Fecha/Hora"]));
-        const llave = `${reg["ID de usuario"]}-${fLimpia}`;
+        const fLimpia = formatearFecha(new Date(reg[columnas.fechaHora]));
+        const llave = `${reg[columnas.id]}-${fLimpia}`;
         if (!mapaAsistencia[llave]) mapaAsistencia[llave] = [];
         mapaAsistencia[llave].push(reg);
     });
@@ -56,12 +59,18 @@ const generarMapaAsistencia = (data) =>{
     return mapaAsistencia
 }
 
-const obtenerDepartamentos = (data) =>{
-    return [...new Set(data.map(reg => reg["Departamento"]))]
+const obtenerDepartamentos = (data) => {
+    const columnas = data.config
+    return [...new Set(data.map(reg => reg[columnas.departamento]))]
 }
 
-async function generarReporte(rutaEntrada, rutaSalida) {
-// Validar que se pasaron los argumentos necesarios
+async function generarReporte(rutaEntrada, rutaSalida, config = {
+    id: 'ID de usuario',
+    nombre: 'Nombre',
+    fechaHora: 'Fecha/Hora',
+    departamento: 'Departamento'
+}) {
+    // Validar que se pasaron los argumentos necesarios
     if (!rutaEntrada || !rutaSalida) {
         console.error("❌ ERROR: Faltan argumentos.");
         console.log("Uso correcto: node index.js <ruta_entrada> <ruta_salida>");
@@ -82,23 +91,25 @@ async function generarReporte(rutaEntrada, rutaSalida) {
         // 1. LEER DATOS
         const book = xlsx.readFile(rutaEntrada, { cellDates: true });
         const data = xlsx.utils.sheet_to_json(book.Sheets[book.SheetNames[0]]);
-        
+
         if (data.length === 0) {
             throw new Error("El archivo de entrada está vacío o no se leyó correctamente.");
         }
         console.log(`✅ Leídos ${data.length} registros del archivo original.`);
-    
+
+        data.config = config
+
         const departamentos = obtenerDepartamentos(data)
-        
+
 
         const calendario = generarCalendario(data)
         const trabajadores = obtenerTrabajadores(data)
         const mapaAsistencia = generarMapaAsistencia(data)
-        
+
 
         // 2. CONFIGURAR EXCELJS
         const workbook = new ExcelJS.Workbook();
-        
+
 
         const sheetColumns = [
             { header: 'ID', key: 'id', width: 10 },
@@ -119,26 +130,26 @@ async function generarReporte(rutaEntrada, rutaSalida) {
             // FORMATO DE ENCABEZADO
             worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
             worksheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4472C4' } };
-            
+
             //GENERAR FILAS
-            console.log(`⏳ Procesando los registros de ${depto}...` );
+            console.log(`⏳ Procesando los registros de ${depto}...`);
             const trabajadoresDepto = trabajadores.filter(t => t.depto === depto)
 
             trabajadoresDepto.forEach(trabajador => {
                 calendario.forEach(dia => {
                     const llave = `${trabajador.id}-${dia}`;
                     const registros = mapaAsistencia[llave];
-                    
+
                     const [d, m, y] = dia.split('/');
-                    const fEval = new Date(2000 + parseInt(y), parseInt(m)-1, parseInt(d));
+                    const fEval = new Date(2000 + parseInt(y), parseInt(m) - 1, parseInt(d));
                     const esFinde = (fEval.getDay() === 0 || fEval.getDay() === 6);
 
                     let rowData;
                     if (registros && registros.length > 0) {
-                        registros.sort((a, b) => new Date(a["Fecha/Hora"]) - new Date(b["Fecha/Hora"]));
-                        const hEntrada = new Date(registros[0]["Fecha/Hora"]).toLocaleTimeString('es-VE', {hour:'2-digit', minute:'2-digit', hour12:false});
-                        const hSalida = registros.length > 1 
-                            ? new Date(registros[registros.length-1]["Fecha/Hora"]).toLocaleTimeString('es-VE', {hour:'2-digit', minute:'2-digit', hour12:false})
+                        registros.sort((a, b) => new Date(a[config.fechaHora]) - new Date(b[config.fechaHora]));
+                        const hEntrada = new Date(registros[0][config.fechaHora]).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false });
+                        const hSalida = registros.length > 1
+                            ? new Date(registros[registros.length - 1][config.fechaHora]).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false })
                             : "--:--";
 
                         rowData = {
@@ -167,7 +178,7 @@ async function generarReporte(rutaEntrada, rutaSalida) {
         // GUARDAR (CON AWAIT)
         console.log(`💾 Intentando guardar archivo en: ${rutaSalida}`);
         await workbook.xlsx.writeFile(rutaSalida);
-        
+
         console.log("✨ ¡PROCESO COMPLETADO! El archivo se generó correctamente.");
 
     } catch (error) {
