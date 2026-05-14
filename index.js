@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-const ExcelJS = require('exceljs');
-const path = require('node:path');
-const xlsx = require('xlsx');
-const fs = require('node:fs')
+import ExcelJS from 'exceljs';
+import path from 'node:path';
+import xlsx from 'xlsx';
+import fs from 'node:fs';
 
 
 // --- FUNCIONES DE AYUDA ---
@@ -204,18 +204,4 @@ async function generarReporte(rutaEntrada, rutaSalida, usuarioConfig = {}) {
     }
 }
 
-if (require.main === module) {
-    // 1. Capturar argumentos de la terminal
-    // process.argv[0] es 'node', process.argv[1] es el script.
-    // El [2] es el input y el [3] es el output.
-    const rutaEntrada = process.argv[2];
-    const rutaSalida = process.argv[3];
-
-    (async () => {
-        await generarReporte(rutaEntrada, rutaSalida);
-    })();
-}
-
-module.exports = {
-    generarReporte
-}
+export { generarReporte };
