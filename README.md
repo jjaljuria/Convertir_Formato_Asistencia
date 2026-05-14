@@ -1,4 +1,4 @@
-# Convertir Formato de Asistencia
+# Convertir Formato de Asistencia [![Node.js CI](https://github.com/jjaljuria/Convertir_Formato_Asistencia/actions/workflows/ci.yml/badge.svg)](https://github.com/jjaljuria/Convertir_Formato_Asistencia/actions/workflows/ci.yml)
 
 Herramienta simple en Node.js para convertir registros de asistencia (XLS/XLSX) a un reporte de asistencia en formato Excel más legible.
 
