@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import ExcelJS from 'exceljs';
+import { fileURLToPath } from 'url'
 import path from 'node:path';
 import xlsx from 'xlsx';
 import fs from 'node:fs';
@@ -202,6 +203,18 @@ async function generarReporte(rutaEntrada, rutaSalida, usuarioConfig = {}) {
     } catch (error) {
         console.error("❌ ERROR CRÍTICO:", error.message);
     }
+}
+
+// convertir import.meta.url a path de archivo
+const __filename = fileURLToPath(import.meta.url);
+
+if (path.resolve(process.argv[1] || '') === __filename) {
+    const rutaEntrada = process.argv[2];
+    const rutaSalida = process.argv[3];
+
+    (async () => {
+        await generarReporte(rutaEntrada, rutaSalida);
+    })();
 }
 
 export { generarReporte };
