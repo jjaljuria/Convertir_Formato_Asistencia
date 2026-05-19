@@ -1,7 +1,7 @@
 {
   "name": "convertir-formato-asistencia",
   "version": "1.2.3",
-  "description": "",
+  "description": "Herramienta Node.js para convertir registros de asistencia (XLS/XLSX) a un reporte de Excel legible, agrupando por usuario y marcando ausencias.",
   "main": "index.js",
   "type": "module",
   "bin": {
@@ -10,7 +10,16 @@
   "scripts": {
     "test": "vitest"
   },
-  "keywords": [],
+  "keywords": [
+    "asistencia",
+    "excel",
+    "xls",
+    "xlsx",
+    "reporte",
+    "conversión",
+    "nodejs",
+    "herramienta"
+  ],
   "author": "",
   "license": "MIT",
   "packageManager": "pnpm@10.26.2",
