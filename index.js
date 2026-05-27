@@ -91,9 +91,8 @@ async function generarReporte(rutaEntrada, rutaSalida, usuarioConfig = {}) {
     };
     // Validar que se pasaron los argumentos necesarios
     if (!rutaEntrada || !rutaSalida) {
-        console.error("❌ ERROR: Faltan argumentos.");
-        console.log("Uso correcto: node index.js <ruta_entrada> <ruta_salida>");
-        console.log('Ejemplo: node index.js ./asistencia.xls ./reporte_abril.xlsx');
+        console.error("❌ ERROR: Faltan argumentos de entrada y/o salida.");
+        console.log("Para ver el uso correcto, ejecuta: cofa --help");
         return;
     }
 
@@ -205,16 +204,43 @@ async function generarReporte(rutaEntrada, rutaSalida, usuarioConfig = {}) {
     }
 }
 
+function mostrarAyuda() {
+    console.log("\nUso: cofa <ruta_entrada> <ruta_salida>\n");
+    console.log("Descripción: Herramienta para convertir registros de asistencia de archivos XLS/XLSX a un reporte de Excel legible, agrupando por usuario y marcando ausencias.\n");
+    console.log("Argumentos:\n");
+    console.log("  <ruta_entrada>     Ruta al archivo de asistencia de entrada (XLS/XLSX).");
+    console.log("  <ruta_salida>      Ruta donde se guardará el reporte de Excel generado (XLSX).");
+    console.log("\nOpciones:\n");
+    console.log("  --help, -h         Muestra esta información de ayuda.");
+    console.log("\nEjemplo:\n");
+    console.log("  cofa ./asistencia.xls ./reporte_abril.xlsx\n");
+    process.exit(0);
+}
+
 // convertir import.meta.url a path de archivo
 const __filename = fileURLToPath(import.meta.url);
 
-if (path.resolve(process.argv[1] || '') === __filename) {
-    const rutaEntrada = process.argv[2];
-    const rutaSalida = process.argv[3];
+const invoked = path.basename(process.argv[1] || '');
+const scriptName = path.basename(__filename);
+
+console.log({ invoked })
+console.log({ scriptName })
+
+if (invoked === scriptName || invoked === 'cofa') {
+    const args = process.argv.slice(2);
+
+    if (args.includes("--help") || args.includes("-h")) {
+        mostrarAyuda();
+    }
+
+    const rutaEntrada = args[0];
+    const rutaSalida = args[1];
 
     (async () => {
         await generarReporte(rutaEntrada, rutaSalida);
     })();
 }
+
+
 
 export { generarReporte };
