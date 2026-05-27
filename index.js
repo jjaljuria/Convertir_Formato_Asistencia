@@ -212,6 +212,7 @@ function mostrarAyuda() {
     console.log("  <ruta_salida>      Ruta donde se guardará el reporte de Excel generado (XLSX).");
     console.log("\nOpciones:\n");
     console.log("  --help, -h         Muestra esta información de ayuda.");
+    console.log("  --version, -v      Muestra la versión de la aplicación.");
     console.log("\nEjemplo:\n");
     console.log("  cofa ./asistencia.xls ./reporte_abril.xlsx\n");
     process.exit(0);
@@ -223,11 +224,17 @@ const __filename = fileURLToPath(import.meta.url);
 const invoked = path.basename(process.argv[1] || '');
 const scriptName = path.basename(__filename);
 
-console.log({ invoked })
-console.log({ scriptName })
-
 if (invoked === scriptName || invoked === 'cofa') {
     const args = process.argv.slice(2);
+
+    const packageJsonPath = path.join(path.dirname(__filename), "package.json");
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+    const appVersion = packageJson.version;
+
+    if (args.includes("--version") || args.includes("-v")) {
+        console.log(`cofa v${appVersion}`);
+        process.exit(0);
+    }
 
     if (args.includes("--help") || args.includes("-h")) {
         mostrarAyuda();
