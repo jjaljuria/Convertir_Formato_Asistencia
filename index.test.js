@@ -86,8 +86,8 @@ describe('generarReporte', () => {
 
         await generarReporte(undefined, 'ruta/salida.xlsx');
 
-        expect(consoleErrorSpy).toHaveBeenCalledWith("❌ ERROR: Faltan argumentos.");
-        expect(consoleLogSpy).toHaveBeenCalledWith("Uso correcto: node index.js <ruta_entrada> <ruta_salida>");
+        expect(consoleErrorSpy).toHaveBeenCalledWith("❌ ERROR: Faltan argumentos de entrada y/o salida.");
+        expect(consoleLogSpy).toHaveBeenCalledWith("Para ver el uso correcto, ejecuta: cofa --help");
         consoleErrorSpy.mockRestore();
         consoleLogSpy.mockRestore();
     });
@@ -98,8 +98,8 @@ describe('generarReporte', () => {
 
         await generarReporte('ruta/entrada.xls', undefined);
 
-        expect(consoleErrorSpy).toHaveBeenCalledWith("❌ ERROR: Faltan argumentos.");
-        expect(consoleLogSpy).toHaveBeenCalledWith("Uso correcto: node index.js <ruta_entrada> <ruta_salida>");
+        expect(consoleErrorSpy).toHaveBeenCalledWith("❌ ERROR: Faltan argumentos de entrada y/o salida.");
+        expect(consoleLogSpy).toHaveBeenCalledWith("Para ver el uso correcto, ejecuta: cofa --help");
         consoleErrorSpy.mockRestore();
         consoleLogSpy.mockRestore();
     });
