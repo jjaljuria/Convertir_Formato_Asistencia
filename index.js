@@ -82,12 +82,17 @@ async function generarReporte(rutaEntrada, rutaSalida, usuarioConfig = {}) {
             salida: 'Salida',
             departamento: 'Departamento',
             estado: "Estado"
+        },
+        mensajes: {
+            falto: 'FALTÓ',
+            finDeSemana: 'FIN DE SEMANA'
         }
     };
 
     const config = {
         entrada: { ...defaultConfig.entrada, ...usuarioConfig.entrada },
-        salida: { ...defaultConfig.salida, ...usuarioConfig.salida }
+        salida: { ...defaultConfig.salida, ...usuarioConfig.salida },
+        mensajes: { ...defaultConfig.mensajes, ...usuarioConfig.mensajes }
     };
     // Validar que se pasaron los argumentos necesarios
     if (!rutaEntrada || !rutaSalida) {
@@ -180,13 +185,13 @@ async function generarReporte(rutaEntrada, rutaSalida, usuarioConfig = {}) {
                         rowData = {
                             id: trabajador.id, nombre: trabajador.nombre, fecha: dia,
                             entrada: '--:--', salida: '--:--', depto: trabajador.depto,
-                            estado: esFinde ? 'FIN DE SEMANA' : 'FALTÓ'
+                            estado: esFinde ? config.mensajes.finDeSemana : config.mensajes.falto
                         };
                     }
 
                     const row = worksheet.addRow(rowData);
                     // Color rojo si faltó
-                    if (rowData.estado === 'FALTÓ') {
+                    if (rowData.estado === config.mensajes.falto) {
                         row.getCell('estado').font = { color: { argb: 'FFFF0000' }, bold: true };
                     }
                 });
