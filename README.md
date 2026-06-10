@@ -64,7 +64,7 @@ Instalación
 Puedes importar y utilizar la función `generarReporte` directamente en tus proyectos Node.js.
 
 ```javascript
-import { generarReporte } from "./index.js";
+import { generarReporte } from "convertir-formato-asistencia";
 
 async function ejecutarReporte() {
   const rutaEntrada = "./asistencia.xls";
@@ -124,8 +124,6 @@ Este objeto se utiliza para definir los nombres de los encabezados de las column
 - `salida`: 'Salida'
 - `departamento`: 'Departamento'
 - `estado`: 'Estado'
-
-**Ejemplo de uso de `usuarioConfig`:**
 
 Notas y consejos
 
