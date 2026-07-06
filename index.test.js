@@ -46,7 +46,12 @@ vi.mock('exceljs', () => {
             font: {},
             fill: {},
         })),
-        addRow: vi.fn(),
+        addRow: vi.fn((rowData) => ({
+            getCell: vi.fn((cell) => ({
+                font: {},
+            })),
+            ...rowData,
+        })),
     };
 
     const mockWorkbookInstance = {
@@ -193,6 +198,49 @@ describe('generarReporte', () => {
         const mockWorkbookInstance = ExcelJS.Workbook.mock.results[0].value; // Obtener la instancia mockeada
         expect(mockWorkbookInstance.addWorksheet).toHaveBeenCalledWith('IT');
 
+        expect(mockWorkbookInstance.xlsx.writeFile).toHaveBeenCalledWith('ruta/salida.xlsx');
+        expect(consoleLogSpy).toHaveBeenCalledWith("✨ ¡PROCESO COMPLETADO! El archivo se generó correctamente.");
+
+        consoleLogSpy.mockRestore();
+    });
+
+    it('debería usar mensajes personalizados para falta y fin de semana', async () => {
+        const mockData = [
+            // 2026-04-01 (miércoles) con asistencia
+            { 'ID de usuario': 1, 'Nombre': 'Jose', 'Fecha/Hora': new Date('2026-04-01T08:00:00.000Z'), 'Departamento': 'IT' },
+            // 2026-04-04 (sábado) con asistencia
+            { 'ID de usuario': 1, 'Nombre': 'Jose', 'Fecha/Hora': new Date('2026-04-04T08:00:00.000Z'), 'Departamento': 'IT' },
+            // 2026-04-08 (miércoles) con asistencia
+            { 'ID de usuario': 1, 'Nombre': 'Jose', 'Fecha/Hora': new Date('2026-04-08T08:00:00.000Z'), 'Departamento': 'IT' },
+            // 2026-04-10 (viernes) con asistencia
+            { 'ID de usuario': 1, 'Nombre': 'Jose', 'Fecha/Hora': new Date('2026-04-10T08:00:00.000Z'), 'Departamento': 'IT' },
+        ];
+        const usuarioConfig = {
+            mensajes: {
+                falto: 'NO ASISTIÓ',
+                finDeSemana: 'WEEKEND'
+            }
+        };
+        const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => { });
+
+        fs.existsSync.mockReturnValue(true);
+        xlsx.readFile.mockReturnValue({ SheetNames: ['Sheet1'], Sheets: { Sheet1: {} } });
+        xlsx.utils.sheet_to_json.mockReturnValue(mockData);
+
+        await generarReporte('ruta/entrada.xls', 'ruta/salida.xlsx', usuarioConfig);
+
+        expect(fs.existsSync).toHaveBeenCalledWith('ruta/entrada.xls');
+        const mockWorkbookInstance = ExcelJS.Workbook.mock.results[0].value;
+        
+        // Verificar que addRow fue llamado con datos que contienen los mensajes personalizados
+        const addRowCalls = mockWorkbookInstance.addWorksheet.mock.results[0].value.addRow.mock.calls;
+        
+        // Buscar filas con ausencia
+        // Días laborales sin asistencia (02, 03, 06, 07, 09) = 'NO ASISTIÓ'
+        // Fines de semana sin asistencia (05, 11, 12) = 'WEEKEND'
+        expect(addRowCalls.some(call => call[0].estado === 'NO ASISTIÓ')).toBe(true);
+        expect(addRowCalls.some(call => call[0].estado === 'WEEKEND')).toBe(true);
+        
         expect(mockWorkbookInstance.xlsx.writeFile).toHaveBeenCalledWith('ruta/salida.xlsx');
         expect(consoleLogSpy).toHaveBeenCalledWith("✨ ¡PROCESO COMPLETADO! El archivo se generó correctamente.");
 
