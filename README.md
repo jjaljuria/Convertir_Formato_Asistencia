@@ -137,7 +137,7 @@ Este objeto permite personalizar los textos que aparecen en la columna `estado` 
 **Valores predeterminados para `mensajes`:**
 
 - `presente`: 'PRESENTE'
-- `falto`: 'FALTÓ'
+- `falto`: 'SIN ASISTENCIA'
 - `finDeSemana`: 'FIN DE SEMANA'
 
 Ejemplo:
@@ -145,10 +145,10 @@ Ejemplo:
 ```javascript
 const usuarioConfig = {
   mensajes: {
-    presente: 'Asistió',
-    falto: 'Sin asistencia',
-    finDeSemana: 'Fin de semana'
-  }
+    presente: "Asistió",
+    falto: "Sin asistencia",
+    finDeSemana: "Fin de semana",
+  },
 };
 ```
 
