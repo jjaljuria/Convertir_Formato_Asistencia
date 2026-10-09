@@ -84,7 +84,8 @@ async function generarReporte(rutaEntrada, rutaSalida, usuarioConfig = {}) {
             estado: "Estado"
         },
         mensajes: {
-            falto: 'FALTÓ',
+            presente: 'PRESENTE',
+            falto: 'SIN ASISTENCIA',
             finDeSemana: 'FIN DE SEMANA'
         }
     };
@@ -178,7 +179,7 @@ async function generarReporte(rutaEntrada, rutaSalida, usuarioConfig = {}) {
                         rowData = {
                             id: trabajador.id, nombre: trabajador.nombre, fecha: dia,
                             entrada: hEntrada, salida: hSalida, depto: trabajador.depto,
-                            estado: esFinde ? 'TRABAJÓ FIN DE SEMANA' : 'PRESENTE'
+                            estado: esFinde ? config.mensajes.finDeSemana : config.mensajes.presente
                         };
                     } else {
                         rowData = {

@@ -70,7 +70,7 @@ async function ejecutarReporte() {
   const rutaEntrada = "./asistencia.xls";
   const rutaSalida = "./reporte_personalizado.xlsx";
 
-  // Configuración opcional para personalizar las columnas de entrada y salida
+  // Configuración opcional para personalizar columnas, encabezados y mensajes
   const usuarioConfig = {
     entrada: {
       id: "Número de Empleado",
@@ -82,6 +82,11 @@ async function ejecutarReporte() {
       entrada: "Hora de Entrada",
       salida: "Hora de Salida",
       // Puedes añadir más nombres de columnas de salida aquí
+    },
+    mensajes: {
+      presente: "Asistió",
+      falto: "Sin asistencia",
+      finDeSemana: "Fin de semana",
     },
   };
 
@@ -124,6 +129,28 @@ Este objeto se utiliza para definir los nombres de los encabezados de las column
 - `salida`: 'Salida'
 - `departamento`: 'Departamento'
 - `estado`: 'Estado'
+
+#### `usuarioConfig.mensajes`
+
+Este objeto permite personalizar los textos que aparecen en la columna `estado` cuando un trabajador está presente, falta o el día corresponde a fin de semana.
+
+**Valores predeterminados para `mensajes`:**
+
+- `presente`: 'PRESENTE'
+- `falto`: 'FALTÓ'
+- `finDeSemana`: 'FIN DE SEMANA'
+
+Ejemplo:
+
+```javascript
+const usuarioConfig = {
+  mensajes: {
+    presente: 'Asistió',
+    falto: 'Sin asistencia',
+    finDeSemana: 'Fin de semana'
+  }
+};
+```
 
 Notas y consejos
 

@@ -204,6 +204,45 @@ describe('generarReporte', () => {
         consoleLogSpy.mockRestore();
     });
 
+    it('debería usar mensajes personalizados para presente, falta y fin de semana', async () => {
+        const mockData = [
+            // 2026-04-01 (miércoles) con asistencia
+            { 'ID de usuario': 1, 'Nombre': 'Jose', 'Fecha/Hora': new Date('2026-04-01T08:00:00.000Z'), 'Departamento': 'IT' },
+            // 2026-04-04 (sábado) con asistencia
+            { 'ID de usuario': 1, 'Nombre': 'Jose', 'Fecha/Hora': new Date('2026-04-04T08:00:00.000Z'), 'Departamento': 'IT' },
+            // 2026-04-08 (miércoles) con asistencia
+            { 'ID de usuario': 1, 'Nombre': 'Jose', 'Fecha/Hora': new Date('2026-04-08T08:00:00.000Z'), 'Departamento': 'IT' },
+        ];
+        const usuarioConfig = {
+            mensajes: {
+                presente: 'ASISTIÓ',
+                falto: 'NO ASISTIÓ',
+                finDeSemana: 'WEEKEND'
+            }
+        };
+        const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => { });
+
+        fs.existsSync.mockReturnValue(true);
+        xlsx.readFile.mockReturnValue({ SheetNames: ['Sheet1'], Sheets: { Sheet1: {} } });
+        xlsx.utils.sheet_to_json.mockReturnValue(mockData);
+
+        await generarReporte('ruta/entrada.xls', 'ruta/salida.xlsx', usuarioConfig);
+
+        expect(fs.existsSync).toHaveBeenCalledWith('ruta/entrada.xls');
+        const mockWorkbookInstance = ExcelJS.Workbook.mock.results[0].value;
+
+        const addRowCalls = mockWorkbookInstance.addWorksheet.mock.results[0].value.addRow.mock.calls;
+
+        expect(addRowCalls.some(call => call[0].estado === 'ASISTIÓ')).toBe(true);
+        expect(addRowCalls.some(call => call[0].estado === 'WEEKEND')).toBe(true);
+        expect(addRowCalls.some(call => call[0].estado === 'NO ASISTIÓ')).toBe(true);
+
+        expect(mockWorkbookInstance.xlsx.writeFile).toHaveBeenCalledWith('ruta/salida.xlsx');
+        expect(consoleLogSpy).toHaveBeenCalledWith("✨ ¡PROCESO COMPLETADO! El archivo se generó correctamente.");
+
+        consoleLogSpy.mockRestore();
+    });
+
     it('debería usar mensajes personalizados para falta y fin de semana', async () => {
         const mockData = [
             // 2026-04-01 (miércoles) con asistencia
