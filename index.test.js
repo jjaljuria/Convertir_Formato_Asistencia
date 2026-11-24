@@ -338,8 +338,8 @@ describe('generarReporte', () => {
         );
 
         expect(xlsx.readFile).toHaveBeenCalledWith('ruta/personal.xlsx', { cellDates: true });
-        expect(estadoPorIdYFecha['2-01/04/26']).toBe('Vacaciones/Permiso');
-        expect(estadoPorIdYFecha['2-02/04/26']).toBe('Vacaciones/Permiso');
+        expect(estadoPorIdYFecha['2-01/04/26']).toBe('');
+        expect(estadoPorIdYFecha['2-02/04/26']).toBe('');
         expect(estadoPorIdYFecha['2-04/04/26']).toBe('FIN DE SEMANA');
         expect(estadoPorIdYFecha['1-02/04/26']).toBe('SIN ASISTENCIA');
         expect(workbook.xlsx.writeFile).toHaveBeenCalledWith('ruta/salida.xlsx');

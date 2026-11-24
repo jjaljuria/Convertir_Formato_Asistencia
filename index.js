@@ -148,7 +148,7 @@ async function generarReporte(rutaEntrada, rutaSalida, usuarioConfig = {}, rutaP
             presente: 'PRESENTE',
             falto: 'SIN ASISTENCIA',
             finDeSemana: 'FIN DE SEMANA',
-            vacacionesPermiso: 'Vacaciones/Permiso'
+            vacacionesPermiso: ''
         }
     };
 
