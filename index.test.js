@@ -311,7 +311,7 @@ describe('generarReporte', () => {
     it('debería cruzar el personal aunque sus columnas estén separadas y en otro orden', async () => {
         const registrosAsistencia = [
             { 'ID de usuario': 1, 'Nombre': 'Jose', 'Fecha/Hora': new Date('2026-04-01T08:00:00.000Z'), 'Departamento': 'IT' },
-            { 'ID de usuario': 1, 'Nombre': 'Jose', 'Fecha/Hora': new Date('2026-04-03T08:00:00.000Z'), 'Departamento': 'IT' },
+            { 'ID de usuario': 1, 'Nombre': 'Jose', 'Fecha/Hora': new Date('2026-04-04T08:00:00.000Z'), 'Departamento': 'IT' },
         ];
         const filasPersonal = [
             ['Departamento', 'Columna extra', 'Nombre', 'Usuario Nro'],
@@ -340,6 +340,7 @@ describe('generarReporte', () => {
         expect(xlsx.readFile).toHaveBeenCalledWith('ruta/personal.xlsx', { cellDates: true });
         expect(estadoPorIdYFecha['2-01/04/26']).toBe('Vacaciones/Permiso');
         expect(estadoPorIdYFecha['2-02/04/26']).toBe('Vacaciones/Permiso');
+        expect(estadoPorIdYFecha['2-04/04/26']).toBe('FIN DE SEMANA');
         expect(estadoPorIdYFecha['1-02/04/26']).toBe('SIN ASISTENCIA');
         expect(workbook.xlsx.writeFile).toHaveBeenCalledWith('ruta/salida.xlsx');
         consoleLogSpy.mockRestore();

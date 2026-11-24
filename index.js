@@ -253,7 +253,7 @@ async function generarReporte(rutaEntrada, rutaSalida, usuarioConfig = {}, rutaP
                         rowData = {
                             id: trabajador.id, nombre: trabajador.nombre, fecha: dia,
                             entrada: '--:--', salida: '--:--', depto: trabajador.depto,
-                            estado: config.mensajes.vacacionesPermiso
+                            estado: esFinde ? config.mensajes.finDeSemana : config.mensajes.vacacionesPermiso
                         };
                     } else {
                         rowData = {
