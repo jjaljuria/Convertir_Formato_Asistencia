@@ -52,7 +52,7 @@ cofa --personal ./personal.xlsx ./asistencia.xls ./reporte_abril.xlsx
 
 - `<ruta_entrada>`: La ruta al archivo de Excel (`.xls` o `.xlsx`) que contiene los registros de asistencia.
 - `<ruta_salida>`: La ruta donde se guardará el reporte de asistencia formateado generado `.xlsx`.
-- `--personal <ruta>`: Excel opcional de personal. Debe incluir `Usuario Nro`, `Nombre` y `Departamento`; las columnas pueden estar en cualquier orden, separadas por otras columnas y acompañadas de columnas extra.
+- `--personal <ruta>`: Excel opcional de personal. Debe incluir `Usuario Nro.`, `Nombre` y `Departamento`; las columnas pueden estar en cualquier orden, separadas por otras columnas y acompañadas de columnas extra.
 
 El personal se cruza con la asistencia por identificador. Para quienes figuren en el padrón pero no tengan ninguna marca en el periodo, se genera una fila por cada fecha del calendario con el estado `Vacaciones/Permiso` en días hábiles y `FIN DE SEMANA` los sábados y domingos. Para quienes sí registraron asistencia, los días hábiles sin marca siguen apareciendo como `SIN ASISTENCIA`. El periodo continúa determinándose a partir de las fechas del archivo de asistencia.
 
