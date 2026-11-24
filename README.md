@@ -7,6 +7,7 @@ Características principales
 - Lee un archivo de entrada con registros de asistencia (columna `Fecha/Hora`).
 - Agrupa por usuario, determina hora de entrada y salida.
 - Marca días de fin de semana y faltas.
+- Permite cruzar los registros con un padrón de personal para incluir a quienes no marcaron asistencia.
 - Genera un archivo Excel `.xlsx` con columnas claras: ID, Nombre, Fecha, Entrada, Salida, Departamento, Estado.
 
 Requisitos
@@ -44,10 +45,16 @@ Una vez que la herramienta esté instalada globalmente, puedes ejecutarla direct
 cofa <ruta_entrada> <ruta_salida>
 # Ejemplo:
 cofa ./asistencia.xls ./reporte_abril.xlsx
+
+# Opcional: agregar personas desde un padrón
+cofa --personal ./personal.xlsx ./asistencia.xls ./reporte_abril.xlsx
 ```
 
 - `<ruta_entrada>`: La ruta al archivo de Excel (`.xls` o `.xlsx`) que contiene los registros de asistencia.
 - `<ruta_salida>`: La ruta donde se guardará el reporte de asistencia formateado generado `.xlsx`.
+- `--personal <ruta>`: Excel opcional de personal. Debe incluir `Usuario Nro`, `Nombre` y `Departamento`; las columnas pueden estar en cualquier orden, separadas por otras columnas y acompañadas de columnas extra.
+
+El personal se cruza con la asistencia por identificador. Para quienes figuren en el padrón pero no tengan ninguna marca en el periodo, se genera una fila por cada fecha del calendario con el estado `Vacaciones/Permiso`. Para quienes sí registraron asistencia, los días hábiles sin marca siguen apareciendo como `SIN ASISTENCIA`. El periodo continúa determinándose a partir de las fechas del archivo de asistencia.
 
 ### 3. Uso Programático
 
@@ -69,6 +76,7 @@ import { generarReporte } from "convertir-formato-asistencia";
 async function ejecutarReporte() {
   const rutaEntrada = "./asistencia.xls";
   const rutaSalida = "./reporte_personalizado.xlsx";
+  const rutaPersonal = "./personal.xlsx"; // Opcional
 
   // Configuración opcional para personalizar columnas, encabezados y mensajes
   const usuarioConfig = {
@@ -91,7 +99,7 @@ async function ejecutarReporte() {
   };
 
   try {
-    await generarReporte(rutaEntrada, rutaSalida, usuarioConfig);
+    await generarReporte(rutaEntrada, rutaSalida, usuarioConfig, rutaPersonal);
     console.log("Reporte generado exitosamente de forma programática.");
   } catch (error) {
     console.error("Error al generar el reporte de forma programática:", error);
@@ -103,7 +111,7 @@ ejecutarReporte();
 
 ### Objeto de Configuración (`usuarioConfig`)
 
-La función `generarReporte` acepta un tercer argumento opcional, `usuarioConfig`, que es un objeto de configuración. Permite personalizar los nombres de las columnas que el script busca en el archivo de entrada y los nombres de las columnas que genera en el archivo de salida.
+La función `generarReporte` acepta un tercer argumento opcional, `usuarioConfig`, que es un objeto de configuración. Permite personalizar los nombres de las columnas que el script busca en el archivo de entrada y los nombres de las columnas que genera en el archivo de salida. El cuarto argumento opcional es la ruta al archivo Excel de personal.
 
 #### `usuarioConfig.entrada`
 
@@ -139,6 +147,7 @@ Este objeto permite personalizar los textos que aparecen en la columna `estado` 
 - `presente`: 'PRESENTE'
 - `falto`: 'SIN ASISTENCIA'
 - `finDeSemana`: 'FIN DE SEMANA'
+- `vacacionesPermiso`: 'Vacaciones/Permiso'
 
 Ejemplo:
 

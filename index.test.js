@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { generarReporte } from './index.js';
+import { generarReporte, resolverArgumentosCLI } from './index.js';
 import ExcelJS from 'exceljs'; // Importar después de mockear para usar el mock
 import xlsx from 'xlsx';
 import fs from 'node:fs';
@@ -79,6 +79,28 @@ describe('generarReporte', () => {
     // Limpiar mocks antes de cada test
     beforeEach(() => {
         vi.clearAllMocks();
+    });
+
+    it('debería resolver el personal como un argumento opcional', () => {
+        expect(resolverArgumentosCLI([
+            './asistencia.xls',
+            './reporte.xlsx'
+        ])).toEqual({
+            rutaEntrada: './asistencia.xls',
+            rutaSalida: './reporte.xlsx',
+            rutaPersonal: undefined
+        });
+
+        expect(resolverArgumentosCLI([
+            '--personal',
+            './personal.xlsx',
+            './asistencia.xls',
+            './reporte.xlsx'
+        ])).toEqual({
+            rutaEntrada: './asistencia.xls',
+            rutaSalida: './reporte.xlsx',
+            rutaPersonal: './personal.xlsx'
+        });
     });
 
     it('debería ser una función', () => {
@@ -270,19 +292,93 @@ describe('generarReporte', () => {
 
         expect(fs.existsSync).toHaveBeenCalledWith('ruta/entrada.xls');
         const mockWorkbookInstance = ExcelJS.Workbook.mock.results[0].value;
-        
+
         // Verificar que addRow fue llamado con datos que contienen los mensajes personalizados
         const addRowCalls = mockWorkbookInstance.addWorksheet.mock.results[0].value.addRow.mock.calls;
-        
+
         // Buscar filas con ausencia
         // Días laborales sin asistencia (02, 03, 06, 07, 09) = 'NO ASISTIÓ'
         // Fines de semana sin asistencia (05, 11, 12) = 'WEEKEND'
         expect(addRowCalls.some(call => call[0].estado === 'NO ASISTIÓ')).toBe(true);
         expect(addRowCalls.some(call => call[0].estado === 'WEEKEND')).toBe(true);
-        
+
         expect(mockWorkbookInstance.xlsx.writeFile).toHaveBeenCalledWith('ruta/salida.xlsx');
         expect(consoleLogSpy).toHaveBeenCalledWith("✨ ¡PROCESO COMPLETADO! El archivo se generó correctamente.");
 
         consoleLogSpy.mockRestore();
+    });
+
+    it('debería cruzar el personal aunque sus columnas estén separadas y en otro orden', async () => {
+        const registrosAsistencia = [
+            { 'ID de usuario': 1, 'Nombre': 'Jose', 'Fecha/Hora': new Date('2026-04-01T08:00:00.000Z'), 'Departamento': 'IT' },
+            { 'ID de usuario': 1, 'Nombre': 'Jose', 'Fecha/Hora': new Date('2026-04-03T08:00:00.000Z'), 'Departamento': 'IT' },
+        ];
+        const filasPersonal = [
+            ['Departamento', 'Columna extra', 'Nombre', 'Usuario Nro'],
+            ['IT', 'dato', 'Jose', 1],
+            ['HR', 'dato', 'Maria', 2],
+        ];
+        const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => { });
+
+        fs.existsSync.mockReturnValue(true);
+        xlsx.readFile.mockImplementation((ruta) => ({
+            SheetNames: ['Sheet1'],
+            Sheets: { Sheet1: { ruta } }
+        }));
+        xlsx.utils.sheet_to_json.mockImplementation((hoja) =>
+            hoja.ruta === 'ruta/personal.xlsx' ? filasPersonal : registrosAsistencia
+        );
+
+        await generarReporte('ruta/entrada.xls', 'ruta/salida.xlsx', {}, 'ruta/personal.xlsx');
+
+        const workbook = ExcelJS.Workbook.mock.results[0].value;
+        const filasGeneradas = workbook.addWorksheet.mock.results[0].value.addRow.mock.calls.map(([fila]) => fila);
+        const estadoPorIdYFecha = Object.fromEntries(
+            filasGeneradas.map(fila => [`${fila.id}-${fila.fecha}`, fila.estado])
+        );
+
+        expect(xlsx.readFile).toHaveBeenCalledWith('ruta/personal.xlsx', { cellDates: true });
+        expect(estadoPorIdYFecha['2-01/04/26']).toBe('Vacaciones/Permiso');
+        expect(estadoPorIdYFecha['2-02/04/26']).toBe('Vacaciones/Permiso');
+        expect(estadoPorIdYFecha['1-02/04/26']).toBe('SIN ASISTENCIA');
+        expect(workbook.xlsx.writeFile).toHaveBeenCalledWith('ruta/salida.xlsx');
+        consoleLogSpy.mockRestore();
+    });
+
+    it('debería reportar si falta una columna requerida en el archivo de personal', async () => {
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+
+        fs.existsSync.mockReturnValue(true);
+        xlsx.readFile.mockImplementation((ruta) => ({
+            SheetNames: ['Sheet1'],
+            Sheets: { Sheet1: { ruta } }
+        }));
+        xlsx.utils.sheet_to_json.mockImplementation((hoja) =>
+            hoja.ruta === 'ruta/personal.xlsx'
+                ? [['Nombre', 'Departamento'], ['Maria', 'HR']]
+                : [{ 'ID de usuario': 1, 'Nombre': 'Jose', 'Fecha/Hora': new Date('2026-04-01T08:00:00.000Z'), 'Departamento': 'IT' }]
+        );
+
+        await generarReporte('ruta/entrada.xls', 'ruta/salida.xlsx', {}, 'ruta/personal.xlsx');
+
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+            '❌ ERROR CRÍTICO:',
+            'El archivo de personal no contiene la columna requerida "Usuario Nro.".'
+        );
+        consoleErrorSpy.mockRestore();
+    });
+
+    it('debería registrar un error si el archivo opcional de personal no existe', async () => {
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+        fs.existsSync.mockImplementation((ruta) => ruta === 'ruta/entrada.xls');
+
+        await generarReporte('ruta/entrada.xls', 'ruta/salida.xlsx', {}, 'ruta/personal.xlsx');
+
+        expect(fs.existsSync).toHaveBeenCalledWith('ruta/personal.xlsx');
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+            '❌ ERROR: El archivo de personal no existe en: ruta/personal.xlsx'
+        );
+        expect(xlsx.readFile).not.toHaveBeenCalled();
+        consoleErrorSpy.mockRestore();
     });
 });
